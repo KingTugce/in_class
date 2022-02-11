@@ -8,7 +8,7 @@ from drone_inventory.models import User, db, check_password_hash
 
 auth = Blueprint('auth', __name__, template_folder = 'auth_templates')
 
-@auth.route('/signup',methods = ['GET', 'POST' ])
+@auth.route('/signup', methods = ['GET','POST'])
 def signup():
     form = UserLoginForm()
 
@@ -17,19 +17,23 @@ def signup():
             email = form.email.data
             password = form.password.data
             print(email,password)
+            # Add User into Database
+            test = User.query.filter(User.email == email).first()
+            if email == test.email:
+                print(email, 'is already here')
+                flash(f'{email} already has an account with us. Try logging in.', 'auth-failed')
+                return redirect(url_for('auth.signin'))
+            else:
+                user = User(email,password = password)
+                db.session.add(user)
+                db.session.commit()
 
-            #Add user into Database
-            user = User(email, password = password)
-            db.session.add(user)
-            db.session.commit()
-
-            flash(f'Yo have successfully created a user account for {email}.','user-created')
-            return redirect(url_for('auth.signin'))
+                flash(f'You have successfully created a user account for {email}.', "user-created")
 
     except:
         raise Exception('Invalid Form Data: Please check your form.')
-    
-    return render_template('signup.html', form=form )
+
+    return render_template('signup.html', form=form)
 
 @auth.route('/signin',methods = ['GET', 'POST'])
 def signin():
